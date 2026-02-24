@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Team Attendance</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #D90429;
+    --red-dark: #9B031E;
+    --black: #0D0D0D;
+    --white: #F8F8F8;
+    --gray: #1A1A1A;
+    --gray-mid: #333;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--black);
+    color: var(--white);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header {
+    width: 100%;
+    background: var(--red);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::after {
+    content: 'SALES';
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 120px;
+    color: rgba(0,0,0,0.08);
+    position: absolute;
+    right: -10px;
+    top: -20px;
+    letter-spacing: 4px;
+    pointer-events: none;
+  }
+  .logo-dot {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .logo-dot svg { width: 20px; height: 20px; }
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 2px;
+    color: var(--white);
+    line-height: 1;
+  }
+  header p {
+    font-size: 11px;
+    color: rgba(255,255,255,0.75);
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+  }
+
+  .date-badge {
+    margin-left: auto;
+    background: rgba(0,0,0,0.25);
+    border-radius: 8px;
+    padding: 6px 12px;
+    text-align: right;
+    z-index: 1;
+  }
+  .date-badge .date { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; }
+  .date-badge .time { font-size: 11px; color: rgba(255,255,255,0.7); }
+
+  main {
+    width: 100%;
+    max-width: 480px;
+    padding: 24px 16px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .card {
+    background: var(--gray);
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid var(--gray-mid);
+  }
+
+  .section-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--red);
+    margin-bottom: 12px;
+  }
+
+  /* Employee Name */
+  .name-input {
+    width: 100%;
+    background: var(--black);
+    border: 2px solid var(--gray-mid);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--white);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .name-input::placeholder { color: #555; }
+  .name-input:focus { border-color: var(--red); }
+
+  /* Camera */
+  .camera-container {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--black);
+    aspect-ratio: 4/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed var(--gray-mid);
+  }
+  .camera-container.active { border: 2px solid var(--red); }
+
+  #videoEl, #canvasEl {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+  #canvasEl { display: none; }
+
+  .camera-placeholder {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 10px;
+    color: #444;
+  }
+  .camera-placeholder svg { width: 48px; height: 48px; }
+  .camera-placeholder p { font-size: 13px; }
+
+  .camera-controls {
+    display: flex; gap: 10px; margin-top: 12px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 13px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.18s;
+    letter-spacing: 0.3px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-outline {
+    background: transparent;
+    border: 2px solid var(--red);
+    color: var(--red);
+  }
+  .btn-outline:hover { background: var(--red); color: var(--white); }
+  .btn-red {
+    background: var(--red);
+    color: var(--white);
+  }
+  .btn-red:hover { background: var(--red-dark); }
+  .btn-red:disabled { background: #555; cursor: not-allowed; }
+
+  /* Status chips */
+  .status-row {
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .status-chip {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--black);
+    border-radius: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--gray-mid);
+    font-size: 13px;
+  }
+  .status-chip .icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .icon-cam { background: rgba(217,4,41,0.15); color: var(--red); }
+  .icon-loc { background: rgba(217,4,41,0.15); color: var(--red); }
+  .chip-label { color: #888; font-size: 11px; margin-bottom: 1px; }
+  .chip-value { color: var(--white); font-weight: 500; font-size: 13px; word-break: break-word; }
+  .chip-value.pending { color: #555; font-style: italic; }
+
+  /* Submit */
+  .btn-submit {
+    width: 100%;
+    padding: 18px;
+    background: var(--red);
+    color: var(--white);
+    border: none;
+    border-radius: 14px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .btn-submit:hover:not(:disabled) { background: var(--red-dark); transform: translateY(-1px); }
+  .btn-submit:disabled { background: #333; color: #666; cursor: not-allowed; transform: none; }
+
+  /* Overlay */
+  .overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .overlay.show { display: flex; }
+
+  .modal {
+    background: var(--gray);
+    border-radius: 20px;
+    padding: 32px 28px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    border: 1px solid var(--gray-mid);
+    animation: pop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes pop {
+    from { transform: scale(0.85); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .modal-icon {
+    width: 70px; height: 70px;
+    border-radius: 50%;
+    background: rgba(217,4,41,0.12);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+  }
+  .modal-icon svg { width: 36px; height: 36px; color: var(--red); }
+  .modal h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    color: var(--white);
+  }
+  .modal p { color: #999; font-size: 14px; line-height: 1.6; }
+  .modal-name { color: var(--red); font-weight: 600; }
+  .modal-detail { margin-top: 16px; background: var(--black); border-radius: 10px; padding: 12px; font-size: 12px; color: #777; text-align: left; }
+  .modal-detail span { color: var(--white); font-weight: 500; }
+  .modal-close {
+    margin-top: 24px;
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--red);
+    color: var(--white);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    border: none;
+    cursor: pointer;
+  }
+  .modal-close:hover { background: var(--red-dark); }
+
+  .loading-spinner {
+    width: 20px; height: 20px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: var(--white);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #retakeBtn { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-dot">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#D90429" stroke-width="2.5" stroke-linecap="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  </div>
+  <div>
+    <h1>Field Attendance</h1>
+    <p>Sales Team Check-In</p>
+  </div>
+  <div class="date-badge">
+    <div class="date" id="dateDisplay">—</div>
+    <div class="time" id="timeDisplay">—</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Employee Name -->
+  <div class="card">
+    <div class="section-label">👤 Employee</div>
+    <input type="text" class="name-input" id="empName" placeholder="Enter your full name" autocomplete="name" />
+  </div>
+
+  <!-- Camera -->
+  <div class="card">
+    <div class="section-label">📸 Selfie</div>
+    <div class="camera-container" id="cameraContainer">
+      <div class="camera-placeholder" id="cameraPlaceholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        <p>Camera preview will appear here</p>
+      </div>
+      <video id="videoEl" autoplay playsinline></video>
+      <canvas id="canvasEl"></canvas>
+    </div>
+    <div class="camera-controls">
+      <button class="btn btn-outline" id="openCamBtn" onclick="startCamera()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Open Camera
+      </button>
+      <button class="btn btn-red" id="captureBtn" onclick="capturePhoto()" style="display:none">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+        Capture
+      </button>
+      <button class="btn btn-outline" id="retakeBtn" onclick="retakePhoto()">Retake</button>
+    </div>
+  </div>
+
+  <!-- Status -->
+  <div class="card">
+    <div class="section-label">📋 Status</div>
+    <div class="status-row">
+      <div class="status-chip">
+        <div class="icon icon-cam">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </div>
+        <div>
+          <div class="chip-label">PHOTO STATUS</div>
+          <div class="chip-value pending" id="photoStatus">No photo captured yet</div>
+        </div>
+      </div>
+      <div class="status-chip">
+        <div class="icon icon-loc">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div>
+          <div class="chip-label">LOCATION</div>
+          <div class="chip-value pending" id="locationStatus">Fetching location…</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-outline" id="refreshLocBtn" onclick="getLocation()" style="margin-top:12px;display:none">
+      ↻ Refresh Location
+    </button>
+  </div>
+
+  <!-- Submit -->
+  <button class="btn-submit" id="submitBtn" onclick="submitAttendance()" disabled>
+    <div class="loading-spinner" id="spinner"></div>
+    <span id="submitLabel">MARK ATTENDANCE</span>
+  </button>
+
+</main>
+
+<!-- Confirmation Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+    </div>
+    <h2>Attendance Marked!</h2>
+    <p>Check-in submitted for <span class="modal-name" id="confirmName">—</span></p>
+    <div class="modal-detail">
+      <div>📅 <span id="confirmTime">—</span></div>
+      <div style="margin-top:6px">📍 <span id="confirmLoc">—</span></div>
+    </div>
+    <button class="modal-close" onclick="closeModal()">DONE</button>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────────
+// Paste your Google Apps Script Web App URL here:
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzjdG2lyVoizFWUFRryGr_jbd-GeHUCsCmCruDGmByP6dDeLz7Oz304_77BBxxiHydO/exec';
+// ───────────────────────────────────────────────────────
+
+let photoDataUrl = null;
+let locationData = null;
+let stream = null;
+
+// Clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('dateDisplay').textContent =
+    now.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }).toUpperCase();
+  document.getElementById('timeDisplay').textContent =
+    now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ── LOCATION ──────────────────────────────────────────
+function getLocation() {
+  document.getElementById('locationStatus').textContent = 'Fetching location…';
+  document.getElementById('locationStatus').className = 'chip-value pending';
+
+  if (!navigator.geolocation) {
+    document.getElementById('locationStatus').textContent = 'Geolocation not supported';
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const { latitude, longitude, accuracy } = pos.coords;
+    locationData = { latitude, longitude, accuracy };
+    const locName = await reverseGeocode(latitude, longitude);
+    locationData.name = locName;
+    document.getElementById('locationStatus').textContent = locName;
+    document.getElementById('locationStatus').className = 'chip-value';
+    document.getElementById('refreshLocBtn').style.display = 'flex';
+    checkReady();
+  }, (err) => {
+    let msg = 'Location access denied';
+    if (err.code === 1) msg = 'Please allow location access and refresh';
+    if (err.code === 2) msg = 'Location unavailable, try again';
+    document.getElementById('locationStatus').textContent = msg;
+    document.getElementById('refreshLocBtn').style.display = 'flex';
+    alert('📍 ' + msg + '. Please grant location permission to continue.');
+  }, { enableHighAccuracy: true, timeout: 10000 });
+}
+
+async function reverseGeocode(lat, lon) {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=16&addressdetails=1`);
+    const data = await res.json();
+    const a = data.address;
+    const parts = [
+      a.road || a.pedestrian || a.footway,
+      a.neighbourhood || a.suburb,
+      a.city || a.town || a.village || a.county
+    ].filter(Boolean);
+    return parts.slice(0, 3).join(', ') || data.display_name?.split(',').slice(0,2).join(',') || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+  } catch {
+    return `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+  }
+}
+
+// ── CAMERA ────────────────────────────────────────────
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    const video = document.getElementById('videoEl');
+    video.srcObject = stream;
+    video.style.display = 'block';
+    document.getElementById('cameraPlaceholder').style.display = 'none';
+    document.getElementById('cameraContainer').classList.add('active');
+    document.getElementById('openCamBtn').style.display = 'none';
+    document.getElementById('captureBtn').style.display = 'flex';
+  } catch (e) {
+    alert('📸 Camera access denied. Please allow camera permission and try again.');
+  }
+}
+
+function capturePhoto() {
+  const video = document.getElementById('videoEl');
+  const canvas = document.getElementById('canvasEl');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+
+  // Timestamp watermark
+  const now = new Date();
+  const ts = now.toLocaleString('en-IN');
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.fillRect(0, canvas.height - 36, canvas.width, 36);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 14px DM Sans, sans-serif';
+  ctx.fillText(ts, 10, canvas.height - 12);
+
+  photoDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+
+  video.style.display = 'none';
+  canvas.style.display = 'block';
+
+  if (stream) stream.getTracks().forEach(t => t.stop());
+
+  document.getElementById('captureBtn').style.display = 'none';
+  document.getElementById('retakeBtn').style.display = 'flex';
+
+  document.getElementById('photoStatus').textContent = '✓ Photo captured';
+  document.getElementById('photoStatus').className = 'chip-value';
+
+  checkReady();
+}
+
+function retakePhoto() {
+  photoDataUrl = null;
+  const canvas = document.getElementById('canvasEl');
+  canvas.style.display = 'none';
+  document.getElementById('retakeBtn').style.display = 'none';
+  document.getElementById('openCamBtn').style.display = 'flex';
+  document.getElementById('cameraContainer').classList.remove('active');
+  document.getElementById('cameraPlaceholder').style.display = 'flex';
+  document.getElementById('photoStatus').textContent = 'No photo captured yet';
+  document.getElementById('photoStatus').className = 'chip-value pending';
+  checkReady();
+}
+
+// ── VALIDATION ────────────────────────────────────────
+function checkReady() {
+  const name = document.getElementById('empName').value.trim();
+  const ready = name.length > 1 && photoDataUrl && locationData;
+  document.getElementById('submitBtn').disabled = !ready;
+}
+document.getElementById('empName').addEventListener('input', checkReady);
+
+// ── SUBMIT ────────────────────────────────────────────
+async function submitAttendance() {
+  const name = document.getElementById('empName').value.trim();
+  const now = new Date();
+  const timestamp = now.toLocaleString('en-IN');
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  document.getElementById('spinner').style.display = 'block';
+  document.getElementById('submitLabel').textContent = 'SUBMITTING…';
+
+  const payload = {
+    name,
+    timestamp,
+    latitude: locationData.latitude,
+    longitude: locationData.longitude,
+    accuracy: Math.round(locationData.accuracy || 0),
+    location: locationData.name,
+    photo: photoDataUrl
+  };
+
+  try {
+    await fetch(SHEET_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    showConfirmation(name, timestamp, locationData.name);
+  } catch (e) {
+    alert('❌ Submission failed. Please check your internet connection and try again.');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('submitLabel').textContent = 'MARK ATTENDANCE';
+    checkReady();
+  }
+}
+
+function showConfirmation(name, time, loc) {
+  document.getElementById('confirmName').textContent = name;
+  document.getElementById('confirmTime').textContent = time;
+  document.getElementById('confirmLoc').textContent = loc;
+  document.getElementById('overlay').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.remove('show');
+  // Reset form
+  document.getElementById('empName').value = '';
+  retakePhoto();
+  locationData = null;
+  photoDataUrl = null;
+  document.getElementById('locationStatus').textContent = 'Fetching location…';
+  document.getElementById('locationStatus').className = 'chip-value pending';
+  document.getElementById('refreshLocBtn').style.display = 'none';
+  checkReady();
+  getLocation();
+}
+
+// Auto-start location on load
+getLocation();
+</script>
+</body>
+</html>
+
+
